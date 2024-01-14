@@ -1,7 +1,6 @@
 import time as t
 import PySimpleGUI as sg
-import json
-# -*- coding:utf-8 -*-
+# import json
 import pygame
 from pygame.locals import *
 import sys
@@ -36,18 +35,19 @@ class 時間():
 class 順位():
   def __init__(self) -> None:
     self.img = pygame.image.load("img/rank.png")
-    self.font1 = pygame.font.SysFont("yumincho", 30)
+    self.font1 = pygame.font.SysFont("yugothicuisemibold", 30)
     self.font2 = pygame.font.SysFont("ebrima", 30)
     self.time = 200
     self.len = 1
     self.page = 1
     self.pagemax = 1
     self.now = 0
+    self.height = 24
   def disp(self, datalist:dict, screen, now):
-    if (len(datalist) - 1) % 18 != 0:
-      self.pagemax = (len(datalist) - 1) // 18 + 1
+    if (len(datalist) - 1) % self.height != 0:
+      self.pagemax = (len(datalist) - 1) // self.height + 1
     else:
-      self.pagemax = (len(datalist)) // 18
+      self.pagemax = (len(datalist)) // self.height
     if len(datalist) != self.len:
       self.len = len(datalist)
       self.page = self.pagemax
@@ -70,15 +70,15 @@ class 順位():
       if data == 'top+':
         continue
         # pass
-      if (self.page - 1)*18 < i <= self.page*18:
+      if (self.page - 1)*self.height < i <= self.page*self.height:
         text1 = self.font1.render(data, True, (0, 0, 0))
         timestr = str(datalist[data]//60)+":"+str(datalist[data]%60).zfill(2)
         text2 = self.font2.render(timestr, True, (255, 200, 0))
         ranktext = self.font2.render(str(i), True, (255, 255, 255))
-        screen.blit(self.img, (995, (i-1-(self.page-1)*18)*36+70))
-        screen.blit(ranktext, (1008-(len(str(i))-1)*8, (i-1-(self.page-1)*18)*36+65))
-        screen.blit(text1, (1040, (i-1-(self.page-1)*18)*36+70))
-        screen.blit(text2, (1275-(len(timestr)-1)*20, (i-1-(self.page-1)*18)*36+65))
+        screen.blit(self.img, (995, (i-(self.page-1)*self.height)*36+50))
+        screen.blit(ranktext, (1008-(len(str(i))-1)*8, (i-(self.page-1)*self.height)*36+45))
+        screen.blit(text1, (1040, (i-(self.page-1)*self.height)*36+50))
+        screen.blit(text2, (1275-(len(timestr)-1)*20, (i-(self.page-1)*self.height)*36+45))
 
 class チーム():
   def __init__(self) -> None:
@@ -92,7 +92,7 @@ class チーム():
     self.datapos = []
     for i, team in enumerate(self.team_list):
       self.data.append(team.rstrip('\n')[:5])
-      self.datapos.append(pygame.Vector2((i%5)*160+10, int(i/5)*40+300))
+      self.datapos.append(pygame.Vector2((i%5)*160+10, int(i/5)*40+500))
       self.text = self.font.render(self.data[i], True, (0, 0, 0))
       for data_key in datalist:
         if data_key == self.data[i]:
@@ -100,7 +100,7 @@ class チーム():
           break
       else:
         screen.blit(self.image1, self.datapos[i])
-      screen.blit(self.text, ((i%5)*160+15, int(i/5)*40+305))
+      screen.blit(self.text, ((i%5)*160+15, int(i/5)*40+505))
     f.close()
     return self.data, self.datapos
 
@@ -119,13 +119,13 @@ class チェックポイント():
     self.cp_list = f.readlines()
     for i in range(len(self.cp_list)):
       self.data.append(self.cp_list[i].rstrip('\n')[:5])
-      self.datapos.append(pygame.Vector2((i%5)*160+10, int(i/5)*40+10))
+      self.datapos.append(pygame.Vector2((i%5)*160+10, int(i/5)*40+60))
       self.text = self.font.render(self.data[i], True, (0, 0, 0))
       if i == now:
         screen.blit(self.image2, self.datapos[i])
       else:
         screen.blit(self.image1, self.datapos[i])
-      screen.blit(self.text, ((i%5)*160+15, int(i/5)*40+15))
+      screen.blit(self.text, ((i%5)*160+15, int(i/5)*40+65))
     f.close()
     return self.data , self.datapos
 
@@ -138,7 +138,7 @@ class 設定():
       [sg.Button('入力を登録します', key='-Btn_t-')]
     ]
     self.cp = [
-      [sg.Text('下にチェックポイントを記入')], 
+      [sg.Text('下に計測地点名を記入')], 
       [sg.Text('注意事項\n ・5文字以内\n ・改行で区切る\n ・同一の名称を使用しない')], 
       [sg.Multiline(key='-Input_cp-', default_text="", size=(20, 10))], 
       [sg.Button('入力を登録します', key='-Btn_cp-')]
@@ -158,7 +158,7 @@ class 設定():
         window1.close()
         sys.exit()
     # while True:
-      window2 = sg.Window('チェックポイント設定', self.cp, size=(250, 400))
+      window2 = sg.Window('計測地点設定', self.cp, size=(250, 400))
       event, value = window2.read()  # イベントの入力を待つ
       if event == '-Btn_cp-':
         output = value['-Input_cp-']
@@ -171,6 +171,13 @@ class 設定():
         window2.close()
         sys.exit()
 
+class ヘッダー():
+  def __init__(self) -> None:
+    self.font = pygame.font.SysFont("yugothic",28)
+  def disp(self,screen):
+    text=self.font.render("Esc:終了　Space:スタート、ストップ", True, (0, 0, 0))
+    screen.blit(text, (10, 10))
+
 def main():
   time = 時間()
   cp_now = 0
@@ -179,40 +186,47 @@ def main():
   team = チーム()
   cp = チェックポイント()
   rank = 順位()
-  fullscreen = True
+  header =ヘッダー()
+  # fullscreen = True
   firsttime = True
   # 設定
   setting.setting()
   # 以下メイン実行
   pygame.init()
-  screen = pygame.display.set_mode((1280, 720), FULLSCREEN)
-  pygame.display.set_caption("順位・タイム差表示")
-  font = pygame.font.SysFont("yumincho", 30)
+  screen = pygame.display.set_mode((1280, 960))
+  pygame.display.set_caption("テロップ作成")
+  font = pygame.font.SysFont("yugothicuiregular", 30)
   # text_cp = font.render("", True, (0, 0, 0))
   image_cp = pygame.image.load("img/cp.png")
   while (1):
     screen.fill("GREEN")
-    menu_area = pygame.Rect(pygame.Vector2(0, 0), pygame.Vector2(850, 720))
+    menu_area = pygame.Rect(pygame.Vector2(0, 0), pygame.Vector2(820, 960))
     screen.fill("WHITE", menu_area)
     time.disp(screen)
+    header.disp(screen)
     cp_list, cp_pos_list = cp.disp(screen, cp_now)
     while firsttime:
-      for i in range(len(cp_list)):
-        timedata.update([(cp_list[i], {"top+":""})])
+      for k in cp_list:
+        timedata.update([(k, {"top+":""})])
       # print(timedata)
       firsttime = False
     team_list, team_pos_list = team.disp(screen, timedata[cp_list[cp_now]])
     rank.disp(timedata[cp_list[cp_now]], screen, cp_now)
     text_cp = font.render(cp_list[cp_now], True, (0, 0, 0))
-    screen.blit(image_cp, (860, 25))
-    screen.blit(text_cp, (865, 28))
+    screen.blit(image_cp, (830, 48))
+    screen.blit(text_cp, (835, 51))
+    if 1 < len(timedata[cp_list[cp_now]]) < len(team_list)+1:
+      lag = time.elapsed_time-timedata[cp_list[cp_now]]['top+']
+      lag_text = str(lag//60)+":"+str(lag%60).zfill(2)
+      screen.blit(pygame.font.SysFont("ebrima", 30).render(lag_text, True, (255, 255, 0)),(1275-(len(lag_text)-1)*20,45))
+      screen.blit(pygame.font.SysFont("yugothicuiregular",24).render("一位とのタイム差", True, (0,0,0)),(1000,55))
     pygame.display.update()
     events = pygame.event.get()
     for event in events:
       if event.type == QUIT:
         pygame.quit()
-        with open('data.json', 'w', encoding='UTF-8') as f:
-          json.dump(timedata, f, indent=2, ensure_ascii=False)
+        # with open('data.json', 'w', encoding='UTF-8') as f:
+        #   json.dump(timedata, f, indent=2, ensure_ascii=False)
         sys.exit()
       elif event.type == KEYDOWN:
         if event.key == K_SPACE:
@@ -220,16 +234,16 @@ def main():
         elif event.key == K_RETURN:
           # time.reset()
           pass
-        elif event.key == K_F11:
-          if fullscreen:
-            screen = pygame.display.set_mode((1280, 720))
-          else:
-            screen = pygame.display.set_mode((1280, 720), FULLSCREEN)
-          fullscreen = not fullscreen
+        # elif event.key == K_F11:
+        #   if fullscreen:
+        #     screen = pygame.display.set_mode((1280, 720))
+        #   else:
+        #     screen = pygame.display.set_mode((1280, 720), FULLSCREEN)
+        #   fullscreen = not fullscreen
         elif event.key == K_ESCAPE:
           pygame.quit()
-          with open('data.json', 'w', encoding='UTF-8') as f:
-            json.dump(timedata, f, indent=2, ensure_ascii=False)
+          # with open('data.json', 'w', encoding='UTF-8') as f:
+          #   json.dump(timedata, f, indent=2, ensure_ascii=False)
           sys.exit()
         elif event.key == K_RIGHT and cp_now != len(cp_list)-1:
           cp_now += 1
